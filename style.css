@@ -1,0 +1,102 @@
+body{
+	font-family:Arial;
+
+}
+.body{
+	margin : 0px auto;
+	weight:100%;
+}
+a{
+	text-decoration : none;
+}
+#firstPage{
+	height : 400px;
+	width : 400px;
+	border : 1px black solid;
+	margin:10% 37%;
+	text-align:center;
+}
+
+
+#levelContent{
+	float:left;
+	padding-top:15%;
+	padding-left:30%;
+	}
+#levelSelection{
+	float:left;
+	padding-left:2%;
+		padding-top:19%;
+	margin-bottom:10%;
+}
+
+#startButton{
+clear:both;
+	border:3px black solid;
+	width:150px;
+	margin:10% 33%;
+	padding:7% 0%;
+	font-weight:bold;
+	font-size:150%;
+}
+
+#startButton:hover{
+	background-color:#666;
+}
+#secondPage{
+	border : 1px solid black;
+	margin:5% 30%;
+	padding-top:1%;
+}
+#timer{
+	float:left;
+	border : 1px solid black;
+	margin-left:31%;
+	margin-bottom:5%;
+}
+#score{
+	float:left;
+	border : 1px solid black;
+	margin-left:10%;
+	margin-bottom:5%;
+
+}
+#pause{
+	float:left;
+	border : 1px solid black;
+	width: 50px;
+	text-align:center;
+	margin-left:10%;
+	margin-bottom:5%;
+	padding-bottom:2px;
+	font-weight:bold;
+}
+#pause:hover{
+	background-color:#3BECFC
+}
+
+#divCanvas{
+	clear:both;
+	margin-left:24%;
+}
+
+@media screen and (max-width:1000px){
+	.body{
+		width :80%;
+	}
+	#firstPage{
+		margin:20% 10%;
+	}
+
+
+}
+@media screen and (max-width:600px){
+	.body{
+		width :70%;
+	}
+	#firstPage{
+		margin:30% 5%;
+	}
+
+
+}
