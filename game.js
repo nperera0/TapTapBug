@@ -1,8 +1,8 @@
 
 // all the foods Array
-var foodArray = [];
+var foodArray;
 // all the bugs Array
-var bugsArray = [];
+var bugsArray;
 //all the scores Array
 var scoresArray =[];
 //pause indicator
@@ -12,10 +12,12 @@ var gameLevel; // current gameLevel selected by the player
 
 //setup timerCount
 var timerCount = 60;
+var updateTimer;
 
 //setup scoreboard
 var score=0;
 
+var highScore = localStorage['highScore'];
 // * this is the entry point to the game *//
 function clickButton(){
 	var radios = document.getElementsByName('level');
@@ -26,7 +28,7 @@ function clickButton(){
 		}
 
 	}
-	if(gameLevel==1 ||gameLevel==2){
+	if(gameLevel==1 || gameLevel==2){
 		document.getElementById("firstPage").style.display = 'none';
 		// show secondPage as a block
 		document.getElementById("secondPage").style.display = 'block';
@@ -36,12 +38,15 @@ function clickButton(){
 		alert('Please Select a gameLevel !');
 	}
 
+	score = 0;
+	document.getElementById("score").innerHTML="Score :" + score;
 };
 
 
 function startGame (){
 	resetCanvas();
 	startGameLoop();
+	addBug()
 }
 
 
@@ -49,6 +54,7 @@ function startGame (){
 1. clearing the canvas
 2. resetting the timer
 3. emptying foodArray and bugsArray
+4. setting up click listner
 */
 function resetCanvas (){
 	// reset timer
@@ -61,10 +67,10 @@ function resetCanvas (){
 	ctx.clearRect(0, 0, c.width, c.height)
 
 	//empty bugsArray
-	bugsArray=[];
+	bugsArray = new Array();;
 
 	//empty foodArray
-	foodArray = [];
+	foodArray = new Array();;
 
 	// setup the event listner
 	c.addEventListener('click', function (evt) {
@@ -83,7 +89,7 @@ function resetCanvas (){
 			"y": Math.floor((Math.random()* (c.height-140))+120)
 		}
 		for(var j=0; j < i; j++){
-			overlap = overLap(foodArray[j],foodArray[i]);
+			overlap = foodOverLap(foodArray[j],foodArray[i]);
 			if(overlap){
 				foodArray[i] = {
 					// dont want food in the boarder of canvas
@@ -108,12 +114,38 @@ function renderFoodArray() {
 }
 
 
-// draw food ---- need to draw realistic food here :)
+// draw watermelon
 function drawFood (x,y){
-	ctx.beginPath();
-	ctx.rect(x, y, 20,20);
-	ctx.strokeStyle="blue";
-	ctx.stroke();
+
+	// begin custom shape
+			ctx.save();
+
+		  ctx.beginPath();
+      ctx.arc(x, y, 15, 0, Math.PI, false);
+      ctx.closePath();
+      ctx.lineWidth = 2.5;
+      ctx.fillStyle = 'red';
+      ctx.fill();
+      ctx.strokeStyle = '#550000';
+      ctx.stroke();
+
+			ctx.beginPath();
+      ctx.arc(x, y, 15, 0, Math.PI, false);
+      ctx.lineWidth = 5;
+			ctx.strokeStyle = '#005500';
+      ctx.stroke();
+
+			// shadow
+			ctx.beginPath();
+			ctx.arc(x, y, 15, 0, Math.PI, false);
+      ctx.shadowColor = '#999';
+      ctx.shadowBlur = 1;
+      ctx.shadowOffsetX = 4;
+      ctx.shadowOffsetY = 2;
+      ctx.fill();
+			ctx.stroke();
+
+			ctx.restore();
 }
 
 //get the x-y coordinates of the mouse
@@ -130,34 +162,33 @@ function checkClick(clickX,clickY){
 	if (!isGamePause){
 		for(var i=0;i<bugsArray.length;i++){
 			var bug = bugsArray[i];
+
 			if((bug.x-15<clickX && bug.x+15>clickX)
 			&& (bug.y-15<clickY && bug.y+15>clickY)){
 
-				if (bug.type == 1) {
-					score = score + 5;
-				}else if (bug.type == 2){
-					score = score + 3;
-				}else {
-					score = score + 1;
-				}
-				bugsArray.splice(i,1);
-				renderBugs ()
+				if (!bug.fade){
+					if (bug.type == 1) {
+						score = score + 5;
+					}else if (bug.type == 2){
+						score = score + 3;
+					}else {
+						score = score + 1;
+					}
+			}
+
+				bug.fade = true;
 			}
 		}
+		document.getElementById("score").innerHTML="Score :" + score;
 	}
 };
-
-//TODO: Game loop
 
 
 // here we setup interrupts
 function startGameLoop(){
 	//time in miliseconds
 	window.requestAnimationFrame(draw);
-	bugEnterTime    = setTimeout(addBug, 1000); // new bug enters to screen
-	//drawBugs        = setInterval(renderBugs,100); // render the bugs every 1 s , calculate shortest path etc..
-	updateTimer     = setInterval(updateTimer,1000); // update the count down every second starting from 60s
-	updateScore     = setInterval(function(){document.getElementById("score").innerHTML="Score :" + score;},1000); // update score every second
+	updateTimer     = window.setInterval(updateTime,1000); // update the count down every second starting from 60s
 }
 
 
@@ -166,6 +197,10 @@ function startGameLoop(){
 function renderBugs (){
 
 	for(var b=0;b<bugsArray.length;b++){
+		if(bugsArray[b].trans <= 0.01){
+			bugsArray.splice(b,1);
+			break;
+		}
 		renderbug (bugsArray[b]);
 
 	}
@@ -175,11 +210,39 @@ function renderBugs (){
 function addBug(){
 	var bug = createBug();
 	bug.x =  Math.floor(Math.random()*380) +10;
-	bug.type = Math.floor((Math.random() * 3) + 1);
+
+	randType = Math.floor((Math.random() * 10) +1);
+
+	if (randType < 3){
+	bug.type = 1;
+		if(gameLevel == 1)
+		bug.speed = 150;
+		else
+		bug.speed = 200;
+	}
+
+	else if (randType < 6){
+	bug.type = 2;
+		if(gameLevel == 1)
+		bug.speed = 75;
+		else
+		bug.speed = 100;
+	}
+
+	else if (randType < 11){
+	bug.type = 3;
+		if(gameLevel == 1)
+		bug.speed = 60;
+		else
+		bug.speed = 80;
+	}
+
 	bugsArray.push(bug);
 
-	var randT = Math.floor((Math.random() * 3) + 1) * 1000;
-	bugEnterTime    = setTimeout(addBug, randT);
+	if(!isGamePause){
+	var randTime = (Math.floor((Math.random() * 3) +1)) * 1000;
+	bugEnterTime    = window.setTimeout(addBug, randTime);
+	}
 }
 
 function createBug(){
@@ -187,16 +250,21 @@ function createBug(){
 		// bug's position
 		"x": 0,
 		"y": 0,
+
+		"oldx": 0,
+		"oldy": 0,
+
 		// bug's current target
 		"target" :-1,
 		// bug's rotation
 		"rotation" : 0,
 
 		"fade": false,
+		"trans": 1,
 
 		"movdir": 0,
 
-		"speed": 20,
+		"speed": 0,
 
 		//bug's type
 		"type":-1
@@ -206,20 +274,60 @@ function createBug(){
 // draw bug TODO add a nicer drawing for bug
 function renderbug (bug){
 
+
 	ctx.save();
 	ctx.beginPath();
 	ctx.translate(bug.x, bug.y);
 	ctx.rotate(bug.rotation);
 
-	ctx.rect(-5, -20, 10, 40);
+	// fade the bug if it been hit
+	if(bug.fade){
+		if(bug.trans > 0.01)
+		bug.trans -= 0.01 ;
+		ctx.globalAlpha = bug.trans;
+	}
+
+	ctx.scale(0.40, 1);
+	ctx.arc(0, 0, 15, 0, 2 * Math.PI, false);
+	ctx.scale(1, 1);
+	ctx.arc(0, -13, 8, 0, 2 * Math.PI, false);
+
 	if (bug.type == 1) {
 		ctx.fillStyle="black";
+		ctx.strokeStyle = "black";
 	}else if (bug.type == 2){
-		ctx.fillStyle="orange";
-	}else {
 		ctx.fillStyle="red";
+		ctx.strokeStyle = "red";
+	}else {
+		ctx.fillStyle="orange";
+		ctx.strokeStyle = "orange";
 	}
 	ctx.fill();
+
+	if(!bug.fade){
+	// draw the legs
+	ctx.beginPath();
+  ctx.lineWidth = 3;
+	ctx.moveTo(- 15,  - 15);
+	ctx.lineTo( + 15, + 15);
+	ctx.stroke();
+	ctx.beginPath();
+  ctx.lineWidth = 2;
+	ctx.moveTo(-23,  -8);
+	ctx.lineTo( + 23, +8);
+	ctx.stroke();
+	ctx.beginPath();
+  ctx.lineWidth = 2;
+	ctx.moveTo(-23,  8);
+	ctx.lineTo( + 23, - 8);
+	ctx.stroke();
+	ctx.beginPath();
+  ctx.lineWidth = 3;
+	ctx.moveTo( + 15,  - 15);
+	ctx.lineTo( - 15,  + 15);
+	ctx.stroke();
+ }
+
 	// reset current transformation matrix to the identity matrix
 	ctx.restore();
 }
@@ -264,27 +372,73 @@ function calDist (){
 	}
 
 
-	function updateTimer(){
+	function updateTime(){
+			if(isGamePause){
+				return;
+			}
 		timerCount --;
-		if(timerCount == 0 || foodArray.length == 0){
+
+		if(timerCount == 0){
 			timerCount = 60;
+
 			if(gameLevel == 1){
+				if(confirm('You WON ! \nYour score is '+ score +'\nPress OK to continue to Level 2\nPress CANCEL to go to Main Menu') == true){
 				gameLevel = 2;
 				startGame ()
+				}
+				else {
+					stopLoop()
+					localStorage["highScore"] = Math.max.apply(null, scoresArray);
+					document.getElementById("highestScore").innerHTML= parseInt(localStorage["highScore"]);
+					document.getElementById("firstPage").style.display = 'block';
+					// show firstPage as a block
+					document.getElementById("secondPage").style.display = 'none';
+				}
 			}
-			else {
-				timerCount = 60;
-				//alert('Game Over !');
+
+			if(gameLevel == 2){
+				scoresArray.push(score);
+				gameLevel = 1;
 				startGame ()
+					if(confirm('You WON ! \nYour score is '+ score +'\nPress OK to replay the game'+'\nPress CANCEL to go to Main Menu') == true){
+					}
+					else {
+						localStorage["highScore"] = Math.max.apply(null, scoresArray);
+						document.getElementById("highestScore").innerHTML= parseInt(localStorage["highScore"]);
+						document.getElementById("firstPage").style.display = 'block';
+						// show firstPage as a block
+						document.getElementById("secondPage").style.display = 'none';
+					}
+				}
 			}
-		}
-		document.getElementById("timer").innerHTML= timerCount+" secs";
+		if(foodArray.length == 0){
+				timerCount = 60;
+				scoresArray.push(score);
+				startGame ()
+				if(confirm('You LOST ! \nYour score is '+ score +'\nPress OK to replay the Level \nPress CANCEL to go to Main Menu') == true){
+				}
+				else {
+					localStorage["highScore"] = Math.max.apply(null, scoresArray);
+					document.getElementById("highestScore").innerHTML= parseInt(localStorage["highScore"]);
+					document.getElementById("firstPage").style.display = 'block';
+					// show firstPage as a block
+					document.getElementById("secondPage").style.display = 'none';
+				}
+	}
+	document.getElementById("timer").innerHTML= timerCount+" secs";
 }
 
-function overLap(obj1,obj2){
+function foodOverLap(obj1,obj2){
 		var xOverlap = (obj2.x >= obj1.x - 80) && (obj2.x <= obj1.x + 40);
 		var yOverlap = (obj2.y >= obj1.y - 80) && (obj2.y <= obj1.y + 40);
 		return (xOverlap && yOverlap);
+}
+function bugOverLap(obj1,obj2){
+		var xOverlap = Math.floor(Math.abs(obj2.x - obj1.x));
+		var yOverlap = Math.floor(Math.abs(obj2.y - obj1.y));
+
+		var Dist = Math.floor(Math.sqrt((xOverlap*xOverlap)+(yOverlap*yOverlap)));
+		return (Dist < 25);
 }
 
 
@@ -294,10 +448,10 @@ function checkPause(){
 		if(!isGamePause){
 			stopLoop();
 			isGamePause = true
-			document.getElementById("pause").innerHTML="Play";
+			document.getElementById("pause").innerHTML="&#9658;";
 		}else{
-			startGameLoop();
 			isGamePause = false;
+			startGameLoop();
 			document.getElementById("pause").innerHTML="||";
 		}
 	}
@@ -317,14 +471,44 @@ function draw (){
 		curtime =(new Date()).getTime();
 		var timeDiff = curtime - prevtime;
 
+		var overlap = false;
+
 		for (var i=0; i < bugsArray.length; i++){
 			// pixels / second
-			if (!bugsArray[i].fade){
+			if (!bugsArray[i].fade && !isGamePause){
 				bugsArray[i].x += Math.cos(bugsArray[i].movdir)*bugsArray[i].speed
 				* timeDiff / 1000;
 				bugsArray[i].y += Math.sin(bugsArray[i].movdir)*bugsArray[i].speed
 				* timeDiff / 1000;
 			}
+			for(var j=0; j < i; j++){
+				overlap = bugOverLap(bugsArray[j],bugsArray[i]);
+				// bug overlap logic
+				if(overlap){
+					if(bugsArray[j].type < bugsArray[i].type){
+						// I am the slow one , so I wait
+						bugsArray[i].x = bugsArray[i].oldx;
+						bugsArray[i].y = bugsArray[i].oldy;
+					}
+					else if(bugsArray[j].type > bugsArray[i].type){
+						// I am the fast one so pause the other one
+						bugsArray[j].x = bugsArray[j].oldx;
+					  bugsArray[j].y = bugsArray[j].oldy;
+					}
+					else if((bugsArray[j].type == bugsArray[i].type) && (bugsArray[j].x > bugsArray[i].x)){
+							// I am in left so pause
+							bugsArray[i].x = bugsArray[i].oldx;
+							bugsArray[i].y = bugsArray[i].oldy;
+					}
+					else if((bugsArray[j].type == bugsArray[i].type) && (bugsArray[j].x < bugsArray[i].x)){
+							// I am in right so pause other one
+							bugsArray[j].x = bugsArray[j].oldx;
+							bugsArray[j].y = bugsArray[j].oldy;
+					}
+				}
+			}
+			bugsArray[i].oldx = bugsArray[i].x;
+			bugsArray[i].oldy = bugsArray[i].y;
 		}
  calDist();
  ctx.clearRect(0, 0, c.width, c.height)
@@ -339,7 +523,5 @@ function draw (){
 
 
 function stopLoop(){
-	clearInterval(bugEnterTime);
-	clearInterval(updateTimer);
-	clearInterval(updateScore);
+	window.clearInterval(updateTimer);
 }
